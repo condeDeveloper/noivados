@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.so }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        so: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # Os testes primeiro: sao eles que prendem os numeros das tabelas.
+      - name: Testes
+        run: dotnet test testes/Noivados.Testes/Noivados.Testes.csproj -c Release --nologo
+
+      - name: Quantos emparelhamentos estaveis cada rodada tem
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- quantos
+
+      - name: Quem pede contra quem recebe
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- confronto
+
+      - name: Pedidos gastos contra o limite conhecido
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- pedidos
+
+      - name: O reticulado dos emparelhamentos estaveis
+        run: dotnet run --project ferramentas/Medidor/Medidor.csproj -c Release -- reticulado
